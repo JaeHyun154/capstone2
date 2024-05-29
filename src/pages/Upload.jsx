@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
 import '../assets/css/Upload.css';
+import WarningModal from '../components/WarningModal';
 
 function Upload() {
     const [file, setFile] = useState(null);
     const [dragging, setDragging] = useState(false);
+    const [showModal, setShowModal] = useState(true);
     const mainImageRef = useRef(null);
     const uploadContainerRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -14,11 +17,30 @@ function Upload() {
         }
     };
 
-    const handleSubmit = event => {
+    const handleSubmit = async event => {
         event.preventDefault();
         if (file) {
-            console.log('Uploading file:', file);
-            // 파일 업로드 처리 로직 추가
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await axios.post('YOUR_S3_UPLOAD_URL', formData, { // 형 여기다가 s3 업로드 url 넣으면 대.
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+
+                if (response.status === 200) {
+                    console.log('File uploaded successfully.');
+                    alert('File uploaded successfully.');
+                } else {
+                    console.error('Failed to upload file.');
+                    alert('Failed to upload file.');
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                alert('Error uploading file.');
+            }
         } else {
             alert('Please select a file to upload.');
         }
@@ -49,25 +71,9 @@ function Upload() {
         fileInputRef.current.click();
     };
 
-    // useEffect(() => {
-    //     const updatePosition = () => {
-    //         if (mainImageRef.current && uploadContainerRef.current) {
-    //             const mainImageHeight = mainImageRef.current.clientHeight;
-    //             const uploadContainerHeight =
-    //                 uploadContainerRef.current.clientHeight;
-    //             const offsetTop =
-    //                 (mainImageHeight - uploadContainerHeight) / 2 + 25; // 중간 정도로 조정
-    //             uploadContainerRef.current.style.top = `${offsetTop}px`;
-    //         }
-    //     };
-
-    //     updatePosition();
-    //     window.addEventListener('resize', updatePosition);
-
-    //     return () => {
-    //         window.removeEventListener('resize', updatePosition);
-    //     };
-    // }, []);
+    const handleCloseModal = () => {
+        setShowModal(false);
+    };
 
     return (
         <div className="page">
@@ -77,6 +83,7 @@ function Upload() {
                 alt="Main"
                 className="main-image"
             />
+            {showModal && <WarningModal onClose={handleCloseModal} />}
             <div
                 className={`upload-container ${dragging ? 'dragging' : ''}`}
                 onDragOver={handleDragOver}
